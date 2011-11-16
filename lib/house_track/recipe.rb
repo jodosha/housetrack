@@ -5,6 +5,10 @@ module HouseTrack
     include HouseTrack::Dsl
     attr_reader :env, :name, :metadata
 
+    def self.root
+      @@root ||= File.expand_path('../../../recipes', __FILE__)
+    end
+
     def self.load_recipes(recipes)
       Environment.new.tap do |env|
         recipes.flatten.each {|recipe| new(env, recipe) }
@@ -20,19 +24,19 @@ module HouseTrack
       instance_eval &eval("proc { #{_load_contents} }", binding)
     end
 
+    def path
+      "#{self.class.root}/#{name}.rb"
+    end
+
     private
       def _load_contents
-        result, metadata = File.new(_resolve_path).read.split(/^__END__$/)
+        result, metadata = File.new(path).read.split(/^__END__$/)
         _load_metadata(metadata)
         result
       end
 
       def _load_metadata(metadata)
         @metadata = YAML.load(metadata).to_hash
-      end
-
-      def _resolve_path
-        File.expand_path("../../../recipes/#{name}.rb", __FILE__)
       end
   end
 end
